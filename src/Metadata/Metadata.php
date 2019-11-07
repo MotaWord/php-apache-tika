@@ -65,49 +65,51 @@ abstract class Metadata
         $this->meta = $meta;
 
         // process each meta
-        foreach($this->meta as $key => $value)
-        {
+        foreach ($this->meta as $key => $value) {
             $this->setAttribute($key, $value);
         }
 
         // file name without extension if title is not detected
-        if(empty($this->title) && !is_null($file))
-        {
+        if (empty($this->title) && !is_null($file)) {
             $this->title = preg_replace('/\..+$/', '', basename($file));
         }
 
         // use creation date as last modified if not detected
-        if(empty($this->updated))
-        {
+        if (empty($this->updated)) {
             $this->updated = $this->created;
         }
     }
 
     /**
-     * Return an instance of Metadata based on content type
+     * Return an instance or array of Metadata based on content type.
+     * If you are using recursive metadata, this is probably an array of Metadata objects.
      *
-     * @param   string  $response
+     * @param   string|object $response     Can be an object in case of recursive, see line 105
      * @param   string  $file
-     * @return  \Vaites\ApacheTika\Metadata\Metadata
+     * @return  \Vaites\ApacheTika\Metadata\Metadata|\Vaites\ApacheTika\Metadata\Metadata[]
      * @throws  \Exception
      */
     public static function make($response, $file)
     {
         // an empty response throws an error
-        if(empty($response) || trim($response) == '')
-        {
+        if (empty($response) || trim($response) == '') {
             throw new Exception('Empty response');
         }
 
         // decode the JSON response
-        $json = json_decode($response);
+        $meta = is_string($response) ? json_decode($response) : $response;
 
-        // get the meta info
-        $meta = is_array($json) ? current($json) : $json;
+        $multipleMetadataResult = [];
+        if (is_array($meta)) {
+            foreach ($meta as $metum) {
+                $multipleMetadataResult[] = static::make($metum, $file);
+            }
+
+            return $multipleMetadataResult;
+        }
 
         // exceptions if metadata is not valid
-        if(json_last_error())
-        {
+        if (json_last_error()) {
             $message = function_exists('json_last_error_msg') ? json_last_error_msg() : 'Error parsing JSON response';
 
             throw new Exception($message, json_last_error());
@@ -117,8 +119,7 @@ abstract class Metadata
         $mime = is_array($meta->{'Content-Type'}) ? current($meta->{'Content-Type'}) : $meta->{'Content-Type'};
 
         // instance based on content type
-        switch(current(explode('/', $mime)))
-        {
+        switch (current(explode('/', $mime))) {
             case 'image':
                 $instance = new ImageMetadata($meta, $file);
                 break;

@@ -234,9 +234,9 @@ abstract class Client
         {
             $response = $this->request('meta', $file);
         }
-        elseif(in_array($recursive, ['text', 'html', 'ignore']))
+        elseif(in_array($recursive, ['', 'text', 'html', 'ignore']))
         {
-            $response = $this->request("rmeta/$recursive", $file);
+            $response = $this->request("rmeta".($recursive ? '/'.$recursive : ''), $file);
         }
         else
         {

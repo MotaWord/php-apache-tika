@@ -42,18 +42,15 @@ class CLIClient extends Client
     {
         parent::__construct();
 
-        if($path)
-        {
+        if ($path) {
             $this->setPath($path);
         }
 
-        if($java)
-        {
+        if ($java) {
             $this->setJava($java);
         }
 
-        if($check === true)
-        {
+        if ($check === true) {
             $this->check();
         }
     }
@@ -112,21 +109,16 @@ class CLIClient extends Client
      */
     public function check()
     {
-        if($this->isChecked() === false)
-        {
+        if ($this->isChecked() === false) {
             // Java command must not return an error
-            try
-            {
+            try {
                 $this->exec(($this->java ?: 'java') . ' -version');
-            }
-            catch(Exception $exception)
-            {
+            } catch (Exception $exception) {
                 throw new Exception('Java command not found');
             }
 
             // JAR path must exists
-            if(file_exists($this->path) === false)
-            {
+            if (file_exists($this->path) === false) {
                 throw new Exception('Apache Tika app JAR not found');
             }
 
@@ -148,8 +140,7 @@ class CLIClient extends Client
         $this->check();
 
         // check if is cached
-        if($this->isCached($type, $file))
-        {
+        if ($this->isCached($type, $file)) {
             return $this->getCachedResponse($type, $file);
         }
 
@@ -160,8 +151,7 @@ class CLIClient extends Client
         $file = $this->checkRequest($type, $file);
 
         // add last argument
-        if($file)
-        {
+        if ($file) {
             $arguments[] = escapeshellarg($file);
         }
 
@@ -173,8 +163,7 @@ class CLIClient extends Client
         $response = $this->exec($command);
 
         // metadata response
-        if($type == 'meta')
-        {
+        if ($type == 'meta') {
             // fix for invalid? json returned only with images
             $response = str_replace(basename($file) . '"}{', '", ', $response);
 
@@ -183,8 +172,7 @@ class CLIClient extends Client
         }
 
         // cache certain responses
-        if($this->isCacheable($type))
-        {
+        if ($this->isCacheable($type)) {
             $this->cacheResponse($type, $response, $file);
         }
 
@@ -208,26 +196,22 @@ class CLIClient extends Client
         $callback = $this->callback;
 
         // get output if command runs ok
-        if(is_resource($process))
-        {
+        if (is_resource($process)) {
             fclose($pipes[0]);
             $this->response = '';
-            while($chunk = stream_get_line($pipes[1], $this->chunkSize))
-            {
-                if(!is_null($callback))
-                {
+            while ($chunk = stream_get_line($pipes[1], $this->chunkSize)) {
+                if (!is_null($callback)) {
                     $callback($chunk);
+                } else {
+                    $this->response .= $chunk;
                 }
-
-                $this->response .= $chunk;
             }
             fclose($pipes[1]);
             $exit = proc_close($process);
         }
 
         // exception if exit value is not zero
-        if($exit > 0)
-        {
+        if ($exit > 0) {
             throw new Exception("Unexpected exit value ($exit) for command $command");
         }
 
@@ -246,8 +230,7 @@ class CLIClient extends Client
     {
         // parameters for command
         $arguments = [];
-        switch($type)
-        {
+        switch ($type) {
             case 'html':
                 $arguments[] = '--html';
                 break;

@@ -71,29 +71,23 @@ class WebClient extends Client
     {
         parent::__construct();
 
-        if(is_string($host) && filter_var($host, FILTER_VALIDATE_URL))
-        {
+        if (is_string($host) && filter_var($host, FILTER_VALIDATE_URL)) {
             $this->setUrl($host);
-        }
-        elseif($host)
-        {
+        } elseif ($host) {
             $this->setHost($host);
         }
 
-        if(is_numeric($port))
-        {
+        if (is_numeric($port)) {
             $this->setPort($port);
         }
 
-        if(!empty($options))
-        {
+        if (!empty($options)) {
             $this->setOptions($options);
         }
 
         $this->setDownloadRemote(true);
 
-        if($check === true)
-        {
+        if ($check === true) {
             $this->check();
         }
     }
@@ -120,8 +114,7 @@ class WebClient extends Client
 
         $this->setHost($url['host']);
 
-        if(isset($url['port']))
-        {
+        if (isset($url['port'])) {
             $this->setPort($url['port']);
         }
 
@@ -230,8 +223,7 @@ class WebClient extends Client
      */
     public function setOption($key, $value)
     {
-        if(in_array($key, [CURLINFO_HEADER_OUT, CURLOPT_PUT, CURLOPT_RETURNTRANSFER]))
-        {
+        if (in_array($key, [CURLINFO_HEADER_OUT, CURLOPT_PUT, CURLOPT_RETURNTRANSFER])) {
             throw new Exception("Value for cURL option $key cannot be modified", 3);
         }
 
@@ -249,8 +241,7 @@ class WebClient extends Client
      */
     public function setOptions($options)
     {
-        foreach($options as $key => $value)
-        {
+        foreach ($options as $key => $value) {
             $this->setOption($key, $value);
         }
 
@@ -288,8 +279,7 @@ class WebClient extends Client
      */
     public function check()
     {
-        if($this->isChecked() === false)
-        {
+        if ($this->isChecked() === false) {
             $this->setChecked(true);
 
             // throws an exception if server is unreachable or can't connect
@@ -313,12 +303,9 @@ class WebClient extends Client
         $this->check();
 
         // check if is cached
-        if($this->isCached($type, $file))
-        {
+        if ($this->isCached($type, $file)) {
             return $this->getCachedResponse($type, $file);
-        }
-        elseif(!isset($retries[sha1($file)]))
-        {
+        } elseif (!isset($retries[sha1($file)])) {
             $retries[sha1($file)] = $this->retries;
         }
 
@@ -332,8 +319,7 @@ class WebClient extends Client
         $options = $this->getCurlOptions($type, $file);
 
         // sets headers
-        foreach($headers as $header)
-        {
+        foreach ($headers as $header) {
             $options[CURLOPT_HTTPHEADER][] = $header;
         }
 
@@ -344,33 +330,27 @@ class WebClient extends Client
         list($response, $status) = $this->exec($options);
 
         // reduce memory usage closing cURL resource
-        if(isset($options[CURLOPT_INFILE]) && is_resource($options[CURLOPT_INFILE]))
-        {
+        if (isset($options[CURLOPT_INFILE]) && is_resource($options[CURLOPT_INFILE])) {
             fclose($options[CURLOPT_INFILE]);
         }
 
         // request completed successfully
-        if($status == 200)
-        {
+        if ($status == 200) {
             // cache certain responses
-            if($this->isCacheable($type))
-            {
+            if ($this->isCacheable($type)) {
                 $this->cacheResponse($type, $response, $file);
             }
         }
         // request completed successfully but result is empty
-        elseif($status == 204)
-        {
+        elseif ($status == 204) {
             $response = null;
         }
         // retry on request failed with error 500
-        elseif($status == 500 && $retries[sha1($file)]--)
-        {
+        elseif ($status == 500 && $retries[sha1($file)]--) {
             $response = $this->request($type, $file);
         }
         // other status code is an error
-        else
-        {
+        else {
             $this->error($status, $resource, $file);
         }
 
@@ -390,34 +370,27 @@ class WebClient extends Client
         $curl = curl_init();
 
         // add options only if cURL init doesn't fails
-        if(is_resource($curl))
-        {
+        if (is_resource($curl)) {
             // we avoid curl_setopt_array($curl, $options) because strange Windows behaviour (issue #8)
-            foreach($options as $option => $value)
-            {
+            foreach ($options as $option => $value) {
                 curl_setopt($curl, $option, $value);
             }
 
             // make the request directly
-            if(is_null($this->callback))
-            {
+            if (is_null($this->callback)) {
                 $this->response = curl_exec($curl) ?: '';
             }
             // with a callback, the response is appended on each block inside the callback
-            else
-            {
+            else {
                 $this->response = '';
                 curl_exec($curl);
             }
         }
 
         // exception if cURL fails
-        if($curl === false)
-        {
+        if ($curl === false) {
             throw new Exception('Unexpected error');
-        }
-        elseif(curl_errno($curl))
-        {
+        } elseif (curl_errno($curl)) {
             throw new Exception(curl_error($curl), curl_errno($curl));
         }
 
@@ -437,8 +410,7 @@ class WebClient extends Client
      */
     protected function error($status, $resource, $file = null)
     {
-        switch($status)
-        {
+        switch ($status) {
             //  method not allowed
             case 405:
                 throw new Exception('Method not allowed', 405);
@@ -454,8 +426,7 @@ class WebClient extends Client
                 $message = 'Unprocessable document';
 
                 // using remote files require Tika server to be launched with specific options
-                if($this->downloadRemote == false && preg_match('/^http/', $file))
-                {
+                if ($this->downloadRemote == false && preg_match('/^http/', $file)) {
                     $message .= ' (is server launched using "-enableUnsecureFeatures -enableFileUrl" arguments?)';
                 }
 
@@ -486,13 +457,11 @@ class WebClient extends Client
     {
         $headers = [];
 
-        if(!empty($file) && preg_match('/^http/', $file))
-        {
+        if (!empty($file) && preg_match('/^http/', $file)) {
             $headers[] = "fileUrl:$file";
         }
 
-        switch($type)
-        {
+        switch ($type) {
             case 'html':
                 $resource = 'tika';
                 $headers[] = 'Accept: text/html';
@@ -509,6 +478,7 @@ class WebClient extends Client
                 break;
 
             case 'meta':
+            case 'rmeta':
             case 'rmeta/html':
             case 'rmeta/ignore':
             case 'rmeta/text':
@@ -554,14 +524,10 @@ class WebClient extends Client
         $options = $this->options;
 
         // callback
-        if(!is_null($this->callback))
-        {
+        if (!is_null($this->callback)) {
             $callback = $this->callback;
 
-            $options[CURLOPT_WRITEFUNCTION] = function($handler, $data) use($callback)
-            {
-                $this->response .= $data;
-
+            $options[CURLOPT_WRITEFUNCTION] = function ($handler, $data) use ($callback) {
                 $callback($data);
 
                 // safe because cURL must receive the number of *bytes* written
@@ -570,24 +536,20 @@ class WebClient extends Client
         }
 
         // remote file options
-        if($file && preg_match('/^http/', $file))
-        {
+        if ($file && preg_match('/^http/', $file)) {
             //
         }
         // local file options
-        elseif($file && file_exists($file) && is_readable($file))
-        {
+        elseif ($file && file_exists($file) && is_readable($file)) {
             $options[CURLOPT_INFILE] = fopen($file, 'r');
             $options[CURLOPT_INFILESIZE] = filesize($file);
         }
         // other options for specific requests
-        elseif(in_array($type, ['detectors', 'mime-types', 'parsers', 'version']))
-        {
+        elseif (in_array($type, ['detectors', 'mime-types', 'parsers', 'version'])) {
             $options[CURLOPT_PUT] = false;
         }
         // file not accesible
-        else
-        {
+        else {
             throw new Exception("File $file can't be opened");
         }
 
