@@ -92,7 +92,7 @@ abstract class Metadata
     public static function make($response, $file)
     {
         // an empty response throws an error
-        if (empty($response) || trim($response) == '') {
+        if (empty($response) || (is_string($response) && trim($response) == '')) {
             throw new Exception('Empty response');
         }
 
