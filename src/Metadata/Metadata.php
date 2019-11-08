@@ -99,6 +99,11 @@ abstract class Metadata
         // decode the JSON response
         $meta = is_string($response) ? json_decode($response) : $response;
 
+        // This is a single metada result. We will directly return the Metadata object, rather than Metadata[].
+        if (is_array($meta) && count($meta) < 2) {
+            $meta = $meta[0];
+        }
+
         $multipleMetadataResult = [];
         if (is_array($meta)) {
             foreach ($meta as $metum) {
