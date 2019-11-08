@@ -474,7 +474,7 @@ class WebClient extends Client
             case 'mime':
                 $name = basename($file);
                 $resource = 'detect/stream';
-                $headers[] = "Content-Disposition: attachment, filename=$name";
+                $headers[] = "Content-Disposition: attachment; filename=$name";
                 break;
 
             case 'meta':
@@ -483,6 +483,8 @@ class WebClient extends Client
             case 'rmeta/ignore':
             case 'rmeta/text':
                 $resource = $type;
+                $name = basename($file);
+                $headers[] = "Content-Disposition: attachment; filename=$name";
                 $headers[] = 'Accept: application/json';
                 break;
 
