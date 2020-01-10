@@ -290,12 +290,13 @@ class WebClient extends Client
     /**
      * Configure, make a request and return its results
      *
-     * @param   string  $type
-     * @param   string  $file
+     * @param string $type
+     * @param string $file
+     * @param string $mimeType      When provided, this increases quality of metadata, such as in videos.
+     *
      * @return  string
-     * @throws  \Exception
      */
-    public function request($type, $file = null)
+    public function request($type, $file = null, $mimeType = null)
     {
         static $retries = [];
 
@@ -310,7 +311,7 @@ class WebClient extends Client
         }
 
         // parameters for cURL request
-        list($resource, $headers) = $this->getParameters($type, $file);
+        [$resource, $headers] = $this->getParameters($type, $file, $mimeType);
 
         // check the request
         $file = $this->checkRequest($type, $file);
@@ -327,7 +328,7 @@ class WebClient extends Client
         $options[CURLOPT_URL] = $this->getUrl() . "/$resource";
 
         // get the response and the HTTP status code
-        list($response, $status) = $this->exec($options);
+        [$response, $status] = $this->exec($options);
 
         // reduce memory usage closing cURL resource
         if (isset($options[CURLOPT_INFILE]) && is_resource($options[CURLOPT_INFILE])) {
@@ -448,12 +449,15 @@ class WebClient extends Client
      * Get the parameters to make the request
      *
      * @link    https://wiki.apache.org/tika/TikaJAXRS#Specifying_a_URL_Instead_of_Putting_Bytes
-     * @param   string  $type
-     * @param   string  $file
+     *
+     * @param string $type
+     * @param string $file
+     * @param string $mimeType      When provided, this increases quality of metadata, such as in videos.
+     *
      * @return  array
-     * @throws  \Exception
+     * @throws \Exception
      */
-    protected function getParameters($type, $file = null)
+    protected function getParameters($type, $file = null, $mimeType = null)
     {
         $headers = [];
 
@@ -486,6 +490,10 @@ class WebClient extends Client
                 $name = basename($file);
                 $headers[] = "Content-Disposition: attachment; filename=$name";
                 $headers[] = 'Accept: application/json';
+                if ($mimeType) {
+                    $headers[] = 'Content-Type: '.$mimeType;
+                }
+
                 break;
 
             case 'text':

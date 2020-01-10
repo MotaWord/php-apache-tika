@@ -223,20 +223,23 @@ abstract class Client
      * Gets file metadata using recursive if specified
      *
      * @link    https://wiki.apache.org/tika/TikaJAXRS#Recursive_Metadata_and_Content
-     * @param   string  $file
-     * @param   string  $recursive
+     *
+     * @param string $file
+     * @param string $recursive
+     * @param string $mimeType      When provided, this increases quality of metadata, such as in videos.
+     *
      * @return  \Vaites\ApacheTika\Metadata\Metadata|\Vaites\ApacheTika\Metadata\DocumentMetadata|\Vaites\ApacheTika\Metadata\ImageMetadata
-     * @throws  \Exception
+     * @throws \Exception
      */
-    public function getMetadata($file, $recursive = null)
+    public function getMetadata($file, $recursive = null, $mimeType = null)
     {
         if(is_null($recursive))
         {
-            $response = $this->request('meta', $file);
+            $response = $this->request('meta', $file, $mimeType);
         }
         elseif(in_array($recursive, ['', 'text', 'html', 'ignore']))
         {
-            $response = $this->request("rmeta".($recursive ? '/'.$recursive : ''), $file);
+            $response = $this->request("rmeta".($recursive ? '/'.$recursive : ''), $file, $mimeType);
         }
         else
         {
@@ -493,9 +496,9 @@ abstract class Client
             throw new Exception("File $file can't be opened");
         }
         // invalid remote file
-        elseif(preg_match('/^http/', $file) && !preg_match('/200/', get_headers($file)[0]))
+        elseif(preg_match('/^http/', $file) && !preg_match('/200/', ($remoteFileHeaders = get_headers($file)[0])))
         {
-            throw new Exception("File $file can't be opened", 2);
+            throw new Exception("File $file can't be opened, header code: ".$remoteFileHeaders, 2);
         }
         // download remote file if required only for integrated downloader
         elseif(preg_match('/^http/', $file) && $this->downloadRemote)
@@ -557,10 +560,11 @@ abstract class Client
     /**
      * Configure and make a request and return its results.
      *
-     * @param   string  $type
-     * @param   string  $file
+     * @param string $type
+     * @param string $file
+     * @param string $mimeType      When provided, this increases quality of metadata, such as in videos.
+     *
      * @return  string
-     * @throws  \Exception
      */
-    abstract public function request($type, $file = null);
+    abstract public function request($type, $file = null, $mimeType = null);
 }

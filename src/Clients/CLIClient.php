@@ -129,12 +129,14 @@ class CLIClient extends Client
     /**
      * Configure and make a request and return its results
      *
-     * @param   string  $type
-     * @param   string  $file
+     * @param string $type
+     * @param string $file
+     * @param string $mimeType      When provided, this increases quality of metadata, such as in videos.
+     *                              @warning Currently not used in CLIClient.
+     *
      * @return  string
-     * @throws  \Exception
      */
-    public function request($type, $file = null)
+    public function request($type, $file = null, $mimeType = null)
     {
         // check if not checked
         $this->check();
